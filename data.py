@@ -1,6 +1,8 @@
 # data.py
 import tensorflow as tf
 import string
+import json
+import os
 from typing import List, Tuple
 
 # Fixed small character vocabulary (printable ASCII subset)
@@ -21,6 +23,9 @@ def encode(text: str) -> List[int]:
 def decode(ids: List[int]) -> str:
     return "".join(ID2TOK.get(i, " ") for i in ids)
 
+def vocab_size() -> int:
+    return len(VOCAB)
+
 def build_dataset(corpus: str, seq_len: int, batch_size: int, buffer_size: int = 10000) -> tf.data.Dataset:
     ids = tf.constant(encode(corpus), dtype=tf.int32)
     ds = tf.data.Dataset.from_tensor_slices(ids)
@@ -30,26 +35,25 @@ def build_dataset(corpus: str, seq_len: int, batch_size: int, buffer_size: int =
     ds = ds.shuffle(buffer_size).batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
     return ds
 
+# ----- NEW: loaders for MedQuAD JSON files -----
+def load_medquad_json(path: str) -> Tuple[str, list]:
+    """Load a JSON list of {'question', 'answer'} into (corpus, docs)."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"MedQuAD json not found: {path}")
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    docs = [f"Q: {d['question']}\nA: {d['answer']}" for d in data if d.get("question") and d.get("answer")]
+    corpus = " ".join(docs)
+    return corpus, docs
+
+# Fallback tiny toy corpus (kept for quick smoke tests)
 def sample_corpus() -> Tuple[str, List[str]]:
-    # Tiny toy corpus and a small RAG document store; feel free to replace with your own data.
     docs = [
         "TensorFlow is a machine learning framework for building and training models.",
         "Keras provides a high-level API for building neural networks in TensorFlow.",
         "Retrieval augmented generation (RAG) prepends retrieved context to the prompt.",
         "Transformers use attention to model long-range dependencies in sequences.",
-        "Gradients are computed via automatic differentiation and backpropagation.",
-        "Tokenization maps text to integers; decoding maps integers back to text."
     ]
-    base_text = (
-        "tiny transformer language model demo. "
-        "this model learns to predict next characters using attention. "
-        "tensorflow and keras make it straightforward to define models. "
-        "we train on a very small corpus so the model is tiny. "
-        "rag can retrieve helpful context and prepend it to the prompt. "
-    )
-    # Mix docs into the training text to expose model to some document content/phrases
+    base_text = "tiny transformer language model demo for learning character-level modeling. "
     corpus = base_text + " ".join(docs)
     return corpus, docs
-
-def vocab_size() -> int:
-    return len(VOCAB)
