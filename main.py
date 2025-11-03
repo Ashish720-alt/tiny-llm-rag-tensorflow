@@ -7,8 +7,11 @@ from model import TinyTransformerLM, count_params
 from eval_rag import evaluate_model, plot_comparison  # <-- reuse our evaluation functions
 
 def save_split_weights(model, prefix="medquad_lm_250k_part", max_mb=50):
-    """Save model weights split into multiple parts under <max_mb> MB."""
-    tmp_file = prefix + "_full.h5"
+    """Save model weights split into multiple parts under <max_mb> MB.
+
+    Keras 3 requires .weights.h5 for save_weights().
+    """
+    tmp_file = prefix + "_full.weights.h5"   # <- must end with .weights.h5
     model.save_weights(tmp_file)
 
     with open(tmp_file, "rb") as f:
@@ -18,11 +21,12 @@ def save_split_weights(model, prefix="medquad_lm_250k_part", max_mb=50):
     chunk_size = max_mb * 1024 * 1024
     num_parts = (len(data) + chunk_size - 1) // chunk_size
     for i in range(num_parts):
-        part_path = f"{prefix}{i}.h5"
+        part_path = f"{prefix}{i}.weights.h5"   # keep suffix for clarity
         with open(part_path, "wb") as out:
             out.write(data[i * chunk_size : (i + 1) * chunk_size])
         print(f"Saved {part_path} ({os.path.getsize(part_path)/1e6:.2f} MB)")
     print(f"Split into {num_parts} file(s) under {max_mb} MB each.")
+
 
 def main():
     # Prefer GPU
@@ -40,7 +44,7 @@ def main():
     d_ff = 512
     num_layers = 2
     batch_size = 128
-    epochs = 100  # <-- Default 100 epochs
+    epochs = 20 
     lr = 2e-4
 
     # Load training data

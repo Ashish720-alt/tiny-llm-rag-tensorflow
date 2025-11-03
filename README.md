@@ -2,8 +2,8 @@
 
 This project implements a **250,000-parameter character-level Transformer** in TensorFlow/Keras, fine-tuned on the **MedQuAD medical QA dataset**, with an integrated **Retrieval-Augmented Generation (RAG)** pipeline.
 
-## 2. Run Code: First train on 90% of MedQuad (train) without RAG, then on 10 % of MedQuad (test), compare RAG vs no-RAG results.
-python train.py
+## 2. Run Code: First trains on 90% of MedQuad (train) without RAG, then on 10 % of MedQuad (test), compare RAG vs no-RAG results.
+python main.py
 
 # 3. Architecture
 Embedding size: 128
